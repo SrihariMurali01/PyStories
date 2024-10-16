@@ -29,6 +29,17 @@ Make sure you have the following installed:
 - **Node.js**: For running the React frontend.
 - **Python**: For running the Flask backend.
 - **pip**: For installing Python dependencies.
+- **GROQ API**: Please set the Groq API with this command: 
+  
+  (For Windows Systems)
+    ```bash
+    setx GROQ_API "<Your-GROQ_API-GOES-HERE>"
+    ```
+
+  (For Linux/MAC Systems)
+  ```bash
+  export GROQ_API=<YOUR APO KEY GOES HERE>
+  ```
 
 ## Installation
 
@@ -45,7 +56,7 @@ Navigate to the `client` directory and install the dependencies using npm:
 
 ```bash
 cd client
-npm install react react-dom axios @mui/material @emotion/react @emotion/styled react-markdown @fortawesome/react-fontawesome @fortawesome/free-solid-svg-icons react-spinners
+npm install
 ```
 
 ### 3. Install Backend Dependencies

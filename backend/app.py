@@ -6,8 +6,6 @@ import groq
 from flask_cors import CORS
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost/mystorydb'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # 50 MB max limit.
 
@@ -17,7 +15,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 CORS(app)
 
-client = groq.Groq(api_key="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")
+client = groq.Groq(api_key=os.environ["GROQ_API"])
 
 
 @app.route('/')
