@@ -1,11 +1,12 @@
 # PyStories
 
-**PyStories** project, is a **PDF Story Generator** that transforms academic PDFs into engaging, flashcard-like stories for better understanding and easier study. The frontend is built with **React** and styled with **Material-UI**, while the backend is built using **Flask**. It allows users to upload PDFs, extract the content, and generate story-like flashcards for easy reading.
+**PyStories** project, is a **PDF Story Generator** that transforms academic PDFs into engaging, flashcard-like stories for better understanding and easier study. The frontend is built with **React** and styled with **Material-UI**, while the backend is built using **Flask**. It allows users to upload PDFs, extract the content, and generate story-like flashcards for easy reading. We have also added a new feature, to generate those flash-cards as a Powerpoint file, and you can download them too!!
 
 ## Features
 
 - Upload a PDF document to generate stories.
 - Displays the story content as flashcards for easy navigation.
+- Convert the flash-cards to PPTs.
 - Beautiful and responsive user interface with gradient buttons and rounded cards.
 - Smooth navigation between flashcards using arrow buttons.
 - Backend built with Flask for handling file uploads and text processing.

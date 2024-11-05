@@ -5,7 +5,13 @@ import pdfplumber
 import groq
 from flask_cors import CORS
 from pptx import Presentation
-from pptx.util import Pt, Inches
+from pptx.util import Pt
+import markdown2
+from pptx import Presentation
+from pptx.util import Pt
+from pptx.enum.text import PP_ALIGN
+import io
+import re
 
 app = Flask(__name__)
 
@@ -48,7 +54,7 @@ def upload_file():
     story = generateStory(text)
     
 
-    return jsonify({'message': 'File uploaded and story generated', 'story': story}), 200
+    return jsonify({'message': 'File uploaded and story generated', 'story': story, 'file_path': file_path}), 200
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf'}
@@ -79,18 +85,65 @@ def generateStory(text):
     # Return the generated content
     return chat_completion.choices[0].message.content
 
+
+def strip_html_tags(text):
+    # Regular expression to remove HTML tags
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', text)
+
+def convert_markdown_to_text_frame(text_frame, markdown_content):
+    # Convert Markdown content to HTML, then remove tags and process for PowerPoint
+    html_content = markdown2.markdown(markdown_content)
+    
+    # Split the HTML content and process each line
+    for line in html_content.splitlines():
+        plain_text = strip_html_tags(line)  # Remove any remaining HTML tags
+        
+        # Determine style based on HTML tags before stripping
+        if line.startswith("<h1>"):
+            p = text_frame.add_paragraph()
+            p.text = plain_text
+            p.font.size = Pt(28)
+            p.font.bold = True
+            p.alignment = PP_ALIGN.CENTER
+        elif line.startswith("<h2>"):
+            p = text_frame.add_paragraph()
+            p.text = plain_text
+            p.font.size = Pt(24)
+            p.font.bold = True
+            p.alignment = PP_ALIGN.LEFT
+        elif line.startswith("<ul>"):
+            items = line.split("<li>")
+            for item in items[1:]:
+                item_text = strip_html_tags(item.split("</li>")[0])
+                p = text_frame.add_paragraph()
+                p.text = item_text
+                p.level = 1  # Bullet point level
+                p.font.size = Pt(20)
+        elif "<strong>" in line:
+            p = text_frame.add_paragraph()
+            p.text = plain_text
+            p.font.size = Pt(20)
+            p.font.bold = True
+        else:
+            p = text_frame.add_paragraph()
+            p.text = plain_text
+            p.font.size = Pt(20)
+
+
 @app.route('/download_ppt', methods=['POST'])
 def download_ppt():
     paragraphs = request.json.get('paragraphs', [])
     ppt = Presentation()
     
-    # Add a title slide (optional)
+    # Add a title slide
     title_slide_layout = ppt.slide_layouts[0]
     slide = ppt.slides.add_slide(title_slide_layout)
     title = slide.shapes.title
     title.text = "Flashcards Generated from PDF"
+    pdf_name = request.json.get('pdf_name', 'Flashcards')
     
-    # Add each paragraph as a slide
+    # Add each paragraph as a slide with Markdown formatting
     for para in paragraphs:
         # Use a basic text slide layout
         slide_layout = ppt.slide_layouts[1]  # Title and Content layout
@@ -98,19 +151,30 @@ def download_ppt():
         
         # Add title and content
         title = slide.shapes.title
-        title.text = "Flashcard"
+        title.text = pdf_name
         
         content = slide.placeholders[1]
         text_frame = content.text_frame
-        p = text_frame.add_paragraph()
-        p.text = para
-        p.font.size = Pt(14)
+        text_frame.clear()  # Clear any default content
+        convert_markdown_to_text_frame(text_frame, para)  # Format and add the paragraph as Markdown
 
-    # Save the presentation to a temporary file
-    ppt_path = "flashcards.pptx"
-    ppt.save(ppt_path)
+    # Save the presentation to an in-memory file for sending
+    ppt_stream = io.BytesIO()
+    ppt.save(ppt_stream)
+    ppt_stream.seek(0)
 
-    return send_file(ppt_path, as_attachment=True, download_name="flashcards.pptx")
+    return send_file(ppt_stream, as_attachment=True, download_name=f"{pdf_name}.pptx", mimetype="application/vnd.openxmlformats-officedocument.presentationml.presentation")
+
+@app.route('/delete_file', methods=['POST'])
+def delete_file():
+    file_path = request.json.get('file_path')
+    if file_path and os.path.exists(file_path):
+        os.remove(file_path)
+        return jsonify({"status": "File deleted successfully"})
+    return jsonify({"status": "File not found"}), 404
+
+if __name__ == "__main__":
+    app.run(debug=True)
 
 
 if __name__ == '__main__':
