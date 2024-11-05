@@ -1,9 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 import os
 from werkzeug.utils import secure_filename
 import pdfplumber
 import groq
 from flask_cors import CORS
+from pptx import Presentation
+from pptx.util import Pt, Inches
 
 app = Flask(__name__)
 
@@ -15,7 +17,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 CORS(app)
 
-client = groq.Groq(api_key=os.environ["GROQ_API"])
+client = groq.Groq(api_key=os.environ["GROQ_API_KEY"])
 
 
 @app.route('/')
@@ -76,6 +78,41 @@ def generateStory(text):
 
     # Return the generated content
     return chat_completion.choices[0].message.content
+
+@app.route('/download_ppt', methods=['POST'])
+def download_ppt():
+    paragraphs = request.json.get('paragraphs', [])
+    ppt = Presentation()
+    
+    # Add a title slide (optional)
+    title_slide_layout = ppt.slide_layouts[0]
+    slide = ppt.slides.add_slide(title_slide_layout)
+    title = slide.shapes.title
+    title.text = "Flashcards Generated from PDF"
+    
+    # Add each paragraph as a slide
+    for para in paragraphs:
+        # Use a basic text slide layout
+        slide_layout = ppt.slide_layouts[1]  # Title and Content layout
+        slide = ppt.slides.add_slide(slide_layout)
+        
+        # Add title and content
+        title = slide.shapes.title
+        title.text = "Flashcard"
+        
+        content = slide.placeholders[1]
+        text_frame = content.text_frame
+        p = text_frame.add_paragraph()
+        p.text = para
+        p.font.size = Pt(14)
+
+    # Save the presentation to a temporary file
+    ppt_path = "flashcards.pptx"
+    ppt.save(ppt_path)
+
+    return send_file(ppt_path, as_attachment=True, download_name="flashcards.pptx")
+
+
 if __name__ == '__main__':
     app.run(debug=True)
 

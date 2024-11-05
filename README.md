@@ -33,7 +33,7 @@ Make sure you have the following installed:
   
   (For Windows Systems)
     ```bash
-    setx GROQ_API "<Your-GROQ_API-GOES-HERE>"
+    setx GROQ_API_KEY "<Your-GROQ_API-GOES-HERE>"
     ```
 
   (For Linux/MAC Systems)
